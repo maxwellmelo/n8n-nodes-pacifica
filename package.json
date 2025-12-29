@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-pacifica",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "n8n community node for Pacifica - perpetual futures trading with AI-powered features on the Pacifica exchange",
   "keywords": [
     "n8n-community-node-package",
@@ -44,9 +44,7 @@
       "dist/nodes/Pacifica/Pacifica.node.js"
     ]
   },
-  "dependencies": {
-    "ethers": "^6.9.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@typescript-eslint/parser": "^7.0.0",

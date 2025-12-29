@@ -543,11 +543,12 @@ export class Pacifica implements INodeType {
     const agentWalletAddress = credentials.agentWalletAddress as string;
     const agentPrivateKey = credentials.agentPrivateKey as string;
 
-    // Validate private key format
-    if (!agentPrivateKey.match(/^0x[a-fA-F0-9]{64}$/)) {
+    // Validate private key format (Base58 Solana-style)
+    // Base58 alphabet: 123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz
+    if (!agentPrivateKey.match(/^[1-9A-HJ-NP-Za-km-z]{32,88}$/)) {
       throw new NodeOperationError(
         this.getNode(),
-        'Invalid agent private key format. Must be 64 hex characters with 0x prefix.'
+        'Invalid agent private key format. Must be a Base58 encoded Solana-style key.'
       );
     }
 

@@ -1,4 +1,4 @@
-import { ethers } from 'ethers';
+import * as crypto from 'crypto';
 import {
   PacificaResponse,
   PaginatedResponse,
@@ -16,19 +16,155 @@ import {
   SigningOperationType,
 } from '../types';
 
+// Base58 alphabet (Bitcoin/Solana style)
+const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+/**
+ * Encode bytes to base58 string
+ */
+function base58Encode(bytes: Uint8Array): string {
+  const digits = [0];
+  for (const byte of bytes) {
+    let carry = byte;
+    for (let j = 0; j < digits.length; j++) {
+      carry += digits[j] << 8;
+      digits[j] = carry % 58;
+      carry = Math.floor(carry / 58);
+    }
+    while (carry > 0) {
+      digits.push(carry % 58);
+      carry = Math.floor(carry / 58);
+    }
+  }
+  // Handle leading zeros
+  for (const byte of bytes) {
+    if (byte === 0) digits.push(0);
+    else break;
+  }
+  return digits.reverse().map(d => BASE58_ALPHABET[d]).join('');
+}
+
+/**
+ * Decode base58 string to bytes
+ */
+function base58Decode(str: string): Uint8Array {
+  const bytes = [0];
+  for (const char of str) {
+    const value = BASE58_ALPHABET.indexOf(char);
+    if (value === -1) throw new Error(`Invalid base58 character: ${char}`);
+    let carry = value;
+    for (let j = 0; j < bytes.length; j++) {
+      carry += bytes[j] * 58;
+      bytes[j] = carry & 0xff;
+      carry >>= 8;
+    }
+    while (carry > 0) {
+      bytes.push(carry & 0xff);
+      carry >>= 8;
+    }
+  }
+  // Handle leading '1's (zeros)
+  for (const char of str) {
+    if (char === '1') bytes.push(0);
+    else break;
+  }
+  return new Uint8Array(bytes.reverse());
+}
+
+/**
+ * Sort JSON keys recursively (alphabetically)
+ */
+function sortJsonKeys(obj: unknown): unknown {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(sortJsonKeys);
+  }
+  const sorted: Record<string, unknown> = {};
+  const keys = Object.keys(obj as Record<string, unknown>).sort();
+  for (const key of keys) {
+    sorted[key] = sortJsonKeys((obj as Record<string, unknown>)[key]);
+  }
+  return sorted;
+}
+
+/**
+ * Ed25519 signing using Node.js crypto
+ */
+async function ed25519Sign(message: Uint8Array, privateKey: Uint8Array): Promise<Uint8Array> {
+  // Ed25519 private key is 64 bytes (32 bytes seed + 32 bytes public key)
+  // or 32 bytes (just the seed)
+  let seed: Uint8Array;
+  if (privateKey.length === 64) {
+    seed = privateKey.slice(0, 32);
+  } else if (privateKey.length === 32) {
+    seed = privateKey;
+  } else {
+    throw new Error(`Invalid private key length: ${privateKey.length}. Expected 32 or 64 bytes.`);
+  }
+
+  // Create key object from seed
+  const keyObject = crypto.createPrivateKey({
+    key: Buffer.concat([
+      Buffer.from('302e020100300506032b657004220420', 'hex'), // Ed25519 private key ASN.1 prefix
+      Buffer.from(seed),
+    ]),
+    format: 'der',
+    type: 'pkcs8',
+  });
+
+  // Sign the message
+  const signature = crypto.sign(null, Buffer.from(message), keyObject);
+  return new Uint8Array(signature);
+}
+
+/**
+ * Derive Ed25519 public key from private key
+ */
+function derivePublicKey(privateKey: Uint8Array): Uint8Array {
+  let seed: Uint8Array;
+  if (privateKey.length === 64) {
+    // Full keypair: first 32 bytes are seed, last 32 are public key
+    return privateKey.slice(32);
+  } else if (privateKey.length === 32) {
+    seed = privateKey;
+  } else {
+    throw new Error(`Invalid private key length: ${privateKey.length}`);
+  }
+
+  // Create key object and derive public key
+  const keyObject = crypto.createPrivateKey({
+    key: Buffer.concat([
+      Buffer.from('302e020100300506032b657004220420', 'hex'),
+      Buffer.from(seed),
+    ]),
+    format: 'der',
+    type: 'pkcs8',
+  });
+
+  const publicKeyObject = crypto.createPublicKey(keyObject);
+  const publicKeyDer = publicKeyObject.export({ format: 'der', type: 'spki' });
+  // Ed25519 public key is the last 32 bytes of the SPKI DER encoding
+  return new Uint8Array(publicKeyDer.slice(-32));
+}
+
 export class PacificaClient {
-  private wallet: ethers.Wallet;
+  private privateKey: Uint8Array;
+  private publicKey: Uint8Array;
   private baseUrl: string;
   private accountAddress: string;
   private agentWalletAddress: string;
 
   constructor(
-    agentPrivateKey: string,
+    agentPrivateKeyBase58: string,
     accountAddress: string,
     agentWalletAddress: string,
     isMainnet: boolean = true
   ) {
-    this.wallet = new ethers.Wallet(agentPrivateKey);
+    // Decode base58 private key
+    this.privateKey = base58Decode(agentPrivateKeyBase58);
+    this.publicKey = derivePublicKey(this.privateKey);
     this.accountAddress = accountAddress;
     this.agentWalletAddress = agentWalletAddress;
     this.baseUrl = isMainnet
@@ -39,23 +175,33 @@ export class PacificaClient {
   // ========== Signing Methods ==========
 
   /**
-   * Create signature for authenticated requests
+   * Prepare message for signing (Pacifica format)
    */
-  private async signRequest(
+  private prepareMessage(
+    operationType: SigningOperationType,
     payload: Record<string, unknown>,
-    operationType: SigningOperationType
-  ): Promise<string> {
-    // Create the message to sign based on Pacifica's signing requirements
-    const timestamp = Date.now();
-    const message = JSON.stringify({
-      ...payload,
+    timestamp: number,
+    expiryWindow: number
+  ): string {
+    const data = {
+      type: operationType,
       timestamp,
-      operation_type: operationType,
-    });
+      expiry_window: expiryWindow,
+      data: payload,
+    };
 
-    // Sign the message
-    const signature = await this.wallet.signMessage(message);
-    return signature;
+    // Sort keys recursively and stringify with compact format
+    const sorted = sortJsonKeys(data);
+    return JSON.stringify(sorted, null, 0).replace(/\n/g, '');
+  }
+
+  /**
+   * Sign a message with the agent private key
+   */
+  private async signMessage(message: string): Promise<string> {
+    const messageBytes = new TextEncoder().encode(message);
+    const signature = await ed25519Sign(messageBytes, this.privateKey);
+    return base58Encode(signature);
   }
 
   /**
@@ -66,18 +212,18 @@ export class PacificaClient {
     operationType: SigningOperationType
   ): Promise<Record<string, unknown>> {
     const timestamp = Date.now();
-    const dataToSign = {
-      ...payload,
-      timestamp,
-      account: this.accountAddress,
-    };
+    const expiryWindow = 5000; // 5 seconds
 
-    const signature = await this.signRequest(dataToSign, operationType);
+    const message = this.prepareMessage(operationType, payload, timestamp, expiryWindow);
+    const signature = await this.signMessage(message);
 
     return {
-      ...dataToSign,
+      account: this.accountAddress,
       signature,
+      timestamp,
+      expiry_window: expiryWindow,
       agent_wallet: this.agentWalletAddress,
+      ...payload,
     };
   }
 
@@ -121,7 +267,6 @@ export class PacificaClient {
 
     if (requiresAuth && operationType) {
       requestBody = await this.createSignedRequest(body, operationType);
-      headers['agent_wallet'] = this.agentWalletAddress;
     }
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -432,7 +577,7 @@ export class PacificaClient {
     return this.agentWalletAddress;
   }
 
-  get signerAddress(): string {
-    return this.wallet.address;
+  get signerPublicKey(): string {
+    return base58Encode(this.publicKey);
   }
 }

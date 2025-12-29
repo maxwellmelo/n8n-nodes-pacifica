@@ -39,7 +39,7 @@ export class PacificaApi implements ICredentialType {
       description: 'API Agent wallet public address. Generate at https://app.pacifica.fi/apikey',
     },
     {
-      displayName: 'Agent Private Key',
+      displayName: 'Agent Private Key (Base58)',
       name: 'agentPrivateKey',
       type: 'string',
       typeOptions: {
@@ -47,9 +47,9 @@ export class PacificaApi implements ICredentialType {
       },
       default: '',
       required: true,
-      placeholder: '0x...',
-      description: 'API Agent private key (64 hex characters with 0x prefix). Used to sign requests. Encrypted at rest using AES-256.',
-      hint: 'This key is used only for signing trading requests and cannot withdraw funds.',
+      placeholder: 'Base58 encoded private key...',
+      description: 'API Agent private key in Base58 format (Solana-style). Generated at https://app.pacifica.fi/apikey. Encrypted at rest using AES-256.',
+      hint: 'This is a Solana-style Ed25519 keypair. It can only sign trading requests and cannot withdraw funds.',
     },
   ];
 }

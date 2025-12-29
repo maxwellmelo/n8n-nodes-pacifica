@@ -508,13 +508,11 @@ export class PacificaClient {
    */
   async updateLeverage(
     symbol: string,
-    leverage: number,
-    marginMode: 'cross' | 'isolated'
+    leverage: number
   ): Promise<{ success: boolean }> {
     const payload = {
       symbol,
       leverage,
-      margin_mode: marginMode,
     };
 
     return this.post('/api/v1/account/leverage', payload, true, 'update_leverage');

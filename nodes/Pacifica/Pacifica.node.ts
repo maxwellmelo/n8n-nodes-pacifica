@@ -580,7 +580,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['position'],
-            operation: ['updateLeverage', 'updateMarginMode'],
+            operation: ['updateMarginMode'],
           },
         },
       },
@@ -1035,9 +1035,8 @@ export class Pacifica implements INodeType {
           if (operation === 'updateLeverage') {
             const symbol = this.getNodeParameter('positionSymbol', i) as string;
             const leverage = this.getNodeParameter('leverage', i) as number;
-            const marginMode = this.getNodeParameter('marginMode', i) as 'cross' | 'isolated';
 
-            result = await client.updateLeverage(symbol.toUpperCase(), leverage, marginMode);
+            result = await client.updateLeverage(symbol.toUpperCase(), leverage);
           }
 
           if (operation === 'updateMarginMode') {

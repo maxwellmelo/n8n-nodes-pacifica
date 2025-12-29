@@ -1,0 +1,58 @@
+{
+  "name": "n8n-nodes-pacifica",
+  "version": "0.1.0",
+  "description": "n8n community node for Pacifica - perpetual futures trading with AI-powered features on the Pacifica exchange",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "pacifica",
+    "defi",
+    "perpetual",
+    "trading",
+    "crypto",
+    "automation",
+    "derivatives"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/maxwellmelo/n8n-nodes-pacifica",
+  "author": {
+    "name": "Maxwell de Melo",
+    "email": "maxwell.melo0@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxwellmelo/n8n-nodes-pacifica.git"
+  },
+  "engines": {
+    "node": ">=20.15"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "lint": "eslint nodes credentials --ext .ts",
+    "lintfix": "eslint nodes credentials --ext .ts --fix",
+    "prepublishOnly": "echo skip"
+  },
+  "files": ["dist"],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/PacificaApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/Pacifica/Pacifica.node.js"
+    ]
+  },
+  "dependencies": {
+    "ethers": "^6.9.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "gulp": "^4.0.2",
+    "n8n-workflow": "*",
+    "typescript": "~5.4.0"
+  }
+}

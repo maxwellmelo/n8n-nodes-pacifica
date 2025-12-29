@@ -1,0 +1,33 @@
+{
+  "node": "n8n-nodes-pacifica.pacifica",
+  "nodeVersion": "1.0",
+  "codexVersion": "1.0",
+  "categories": ["Finance & Accounting"],
+  "resources": {
+    "credentialDocumentation": [
+      {
+        "url": "https://docs.pacifica.fi/api-documentation/api/signing/api-agent-keys"
+      }
+    ],
+    "primaryDocumentation": [
+      {
+        "url": "https://docs.pacifica.fi/api-documentation/api"
+      }
+    ]
+  },
+  "alias": [
+    "pacifica",
+    "defi",
+    "perpetual",
+    "trading",
+    "crypto",
+    "derivatives",
+    "futures",
+    "exchange"
+  ],
+  "subcategories": {
+    "Finance & Accounting": [
+      "Cryptocurrency"
+    ]
+  }
+}

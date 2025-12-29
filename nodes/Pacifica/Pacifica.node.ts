@@ -61,6 +61,7 @@ export class Pacifica implements INodeType {
         options: [
           { name: 'Get Market Info', value: 'getMarketInfo', action: 'Get market info for all trading pairs' },
           { name: 'Get Prices', value: 'getPrices', action: 'Get price info for all symbols' },
+          { name: 'Get Symbol Price', value: 'getSymbolPrice', action: 'Get price for a specific symbol' },
           { name: 'Get Orderbook', value: 'getOrderbook', action: 'Get orderbook for a symbol' },
           { name: 'Get Candles', value: 'getCandles', action: 'Get historical candle data' },
           { name: 'Get Recent Trades', value: 'getRecentTrades', action: 'Get recent trades for a symbol' },
@@ -79,7 +80,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['marketData'],
-            operation: ['getOrderbook', 'getCandles', 'getRecentTrades', 'getHistoricalFunding'],
+            operation: ['getSymbolPrice', 'getOrderbook', 'getCandles', 'getRecentTrades', 'getHistoricalFunding'],
           },
         },
         description: 'Trading pair symbol',
@@ -577,6 +578,18 @@ export class Pacifica implements INodeType {
           if (operation === 'getPrices') {
             const response = await client.getPrices() as PacificaResponse<PriceInfo[]>;
             result = response.data;
+          }
+
+          if (operation === 'getSymbolPrice') {
+            const symbol = this.getNodeParameter('symbol', i) as string;
+            const response = await client.getPrices() as PacificaResponse<PriceInfo[]>;
+            const symbolPrice = response.data.find(
+              (p: PriceInfo) => p.symbol.toUpperCase() === symbol.toUpperCase()
+            );
+            if (!symbolPrice) {
+              throw new NodeOperationError(this.getNode(), `Symbol ${symbol} not found`);
+            }
+            result = symbolPrice;
           }
 
           if (operation === 'getOrderbook') {

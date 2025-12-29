@@ -209,6 +209,58 @@ export interface OrderResponse {
   order_id: number;
 }
 
+export interface StopOrderResponse {
+  stop_order_id: number;
+}
+
+export interface OrderHistoryEntry {
+  order_id: number;
+  client_order_id?: string;
+  symbol: string;
+  side: string;
+  price: string;
+  initial_amount: string;
+  filled_amount: string;
+  cancelled_amount: string;
+  stop_price?: string;
+  order_type: OrderType;
+  reduce_only: boolean;
+  status: 'open' | 'filled' | 'cancelled' | 'partially_filled';
+  created_at: number;
+  updated_at: number;
+}
+
+// ========== Account History Types ==========
+
+export interface EquityHistoryEntry {
+  equity: string;
+  timestamp: number;
+}
+
+export interface BalanceHistoryEntry {
+  balance: string;
+  change: string;
+  reason: string;
+  timestamp: number;
+}
+
+export interface AccountFundingEntry {
+  symbol: string;
+  funding_rate: string;
+  funding_payment: string;
+  position_size: string;
+  timestamp: number;
+}
+
+// ========== Withdrawal Types ==========
+
+export interface WithdrawalResponse {
+  withdrawal_id: string;
+  amount: string;
+  status: string;
+  created_at: number;
+}
+
 export interface BatchAction {
   type: 'Create' | 'Cancel';
   data: CreateLimitOrderRequest | CreateMarketOrderRequest | CancelOrderRequest;
@@ -238,8 +290,14 @@ export type SigningOperationType =
   | 'create_market_order'
   | 'create_limit_order'
   | 'create_stop_order'
+  | 'create_stop_limit_order'
+  | 'create_stop_market_order'
+  | 'create_tp_sl'
   | 'cancel_order'
+  | 'cancel_stop_order'
   | 'cancel_all_orders'
+  | 'edit_order'
+  | 'batch_orders'
   | 'update_leverage'
   | 'update_margin_mode'
   | 'create_subaccount'

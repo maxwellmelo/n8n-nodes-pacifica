@@ -13,6 +13,12 @@ import {
   TradeHistoryEntry,
   OpenOrder,
   OrderResponse,
+  StopOrderResponse,
+  OrderHistoryEntry,
+  EquityHistoryEntry,
+  BalanceHistoryEntry,
+  AccountFundingEntry,
+  WithdrawalResponse,
   SigningOperationType,
 } from '../types';
 
@@ -565,6 +571,269 @@ export class PacificaClient {
       true,
       'transfer_funds'
     );
+  }
+
+  // ========== Stop Orders ==========
+
+  /**
+   * Create a stop market order
+   */
+  async createStopMarketOrder(
+    symbol: string,
+    side: 'bid' | 'ask',
+    amount: string,
+    stopPrice: string,
+    slippagePercent: string,
+    reduceOnly: boolean = false,
+    clientOrderId?: string
+  ): Promise<StopOrderResponse> {
+    const payload: Record<string, unknown> = {
+      symbol,
+      side,
+      amount,
+      stop_price: stopPrice,
+      slippage_percent: slippagePercent,
+      reduce_only: reduceOnly,
+      order_type: 'stop_market',
+    };
+
+    if (clientOrderId) payload.client_order_id = clientOrderId;
+
+    return this.post('/api/v1/orders/stop', payload, true, 'create_stop_order');
+  }
+
+  /**
+   * Create a stop limit order
+   */
+  async createStopLimitOrder(
+    symbol: string,
+    side: 'bid' | 'ask',
+    amount: string,
+    stopPrice: string,
+    limitPrice: string,
+    tif: 'GTC' | 'IOC' | 'ALO' | 'TOB',
+    reduceOnly: boolean = false,
+    clientOrderId?: string
+  ): Promise<StopOrderResponse> {
+    const payload: Record<string, unknown> = {
+      symbol,
+      side,
+      amount,
+      stop_price: stopPrice,
+      price: limitPrice,
+      tif,
+      reduce_only: reduceOnly,
+      order_type: 'stop_limit',
+    };
+
+    if (clientOrderId) payload.client_order_id = clientOrderId;
+
+    return this.post('/api/v1/orders/stop', payload, true, 'create_stop_order');
+  }
+
+  /**
+   * Create TP/SL for an existing position
+   */
+  async createPositionTpSl(
+    symbol: string,
+    takeProfit?: { stop_price: string; limit_price?: string },
+    stopLoss?: { stop_price: string; limit_price?: string }
+  ): Promise<{ success: boolean }> {
+    const payload: Record<string, unknown> = {
+      symbol,
+    };
+
+    if (takeProfit) payload.take_profit = takeProfit;
+    if (stopLoss) payload.stop_loss = stopLoss;
+
+    return this.post('/api/v1/orders/tp_sl', payload, true, 'create_tp_sl');
+  }
+
+  /**
+   * Cancel a stop order
+   */
+  async cancelStopOrder(
+    symbol: string,
+    stopOrderId?: number,
+    clientOrderId?: string
+  ): Promise<{ success: boolean }> {
+    const payload: Record<string, unknown> = {
+      symbol,
+    };
+
+    if (stopOrderId) payload.stop_order_id = stopOrderId;
+    if (clientOrderId) payload.client_order_id = clientOrderId;
+
+    return this.post('/api/v1/orders/stop/cancel', payload, true, 'cancel_stop_order');
+  }
+
+  // ========== Order History ==========
+
+  /**
+   * Get order history
+   */
+  async getOrderHistory(
+    symbol?: string,
+    startTime?: number,
+    endTime?: number,
+    limit: number = 100,
+    cursor?: number
+  ): Promise<PaginatedResponse<OrderHistoryEntry[]>> {
+    const params: Record<string, string> = {
+      account: this.accountAddress,
+      limit: limit.toString(),
+    };
+    if (symbol) params.symbol = symbol;
+    if (startTime) params.start_time = startTime.toString();
+    if (endTime) params.end_time = endTime.toString();
+    if (cursor) params.cursor = cursor.toString();
+
+    return this.get('/api/v1/orders/history', params);
+  }
+
+  /**
+   * Get order by ID
+   */
+  async getOrderById(orderId: number): Promise<PacificaResponse<OrderHistoryEntry>> {
+    return this.get(`/api/v1/orders/${orderId}`, {
+      account: this.accountAddress,
+    });
+  }
+
+  // ========== Batch Orders ==========
+
+  /**
+   * Submit batch orders (up to 10 actions)
+   */
+  async batchOrders(
+    actions: Array<{
+      type: 'create_limit' | 'create_market' | 'cancel';
+      symbol: string;
+      side?: 'bid' | 'ask';
+      amount?: string;
+      price?: string;
+      slippage_percent?: string;
+      tif?: 'GTC' | 'IOC' | 'ALO' | 'TOB';
+      reduce_only?: boolean;
+      order_id?: number;
+      client_order_id?: string;
+    }>
+  ): Promise<{ results: Array<{ success: boolean; order_id?: number; error?: string }> }> {
+    // Build signed actions
+    const signedActions = await Promise.all(
+      actions.map(async (action) => {
+        const payload: Record<string, unknown> = {
+          symbol: action.symbol,
+        };
+
+        if (action.type === 'create_limit') {
+          payload.side = action.side;
+          payload.amount = action.amount;
+          payload.price = action.price;
+          payload.tif = action.tif || 'GTC';
+          payload.reduce_only = action.reduce_only || false;
+          if (action.client_order_id) payload.client_order_id = action.client_order_id;
+
+          return {
+            type: 'Create',
+            data: await this.createSignedRequest(payload, 'create_limit_order'),
+          };
+        } else if (action.type === 'create_market') {
+          payload.side = action.side;
+          payload.amount = action.amount;
+          payload.slippage_percent = action.slippage_percent || '0.5';
+          payload.reduce_only = action.reduce_only || false;
+          if (action.client_order_id) payload.client_order_id = action.client_order_id;
+
+          return {
+            type: 'Create',
+            data: await this.createSignedRequest(payload, 'create_market_order'),
+          };
+        } else {
+          // Cancel
+          if (action.order_id) payload.order_id = action.order_id;
+          if (action.client_order_id) payload.client_order_id = action.client_order_id;
+
+          return {
+            type: 'Cancel',
+            data: await this.createSignedRequest(payload, 'cancel_order'),
+          };
+        }
+      })
+    );
+
+    return this.post('/api/v1/orders/batch', { actions: signedActions }, false);
+  }
+
+  // ========== Withdrawal ==========
+
+  /**
+   * Request a withdrawal
+   */
+  async requestWithdrawal(amount: string): Promise<WithdrawalResponse> {
+    const payload = {
+      amount,
+    };
+
+    return this.post('/api/v1/withdrawal', payload, true, 'request_withdrawal');
+  }
+
+  // ========== Account Histories ==========
+
+  /**
+   * Get equity history
+   */
+  async getEquityHistory(
+    startTime?: number,
+    endTime?: number,
+    limit: number = 100
+  ): Promise<PaginatedResponse<EquityHistoryEntry[]>> {
+    const params: Record<string, string> = {
+      account: this.accountAddress,
+      limit: limit.toString(),
+    };
+    if (startTime) params.start_time = startTime.toString();
+    if (endTime) params.end_time = endTime.toString();
+
+    return this.get('/api/v1/account/equity_history', params);
+  }
+
+  /**
+   * Get balance history
+   */
+  async getBalanceHistory(
+    startTime?: number,
+    endTime?: number,
+    limit: number = 100
+  ): Promise<PaginatedResponse<BalanceHistoryEntry[]>> {
+    const params: Record<string, string> = {
+      account: this.accountAddress,
+      limit: limit.toString(),
+    };
+    if (startTime) params.start_time = startTime.toString();
+    if (endTime) params.end_time = endTime.toString();
+
+    return this.get('/api/v1/account/balance_history', params);
+  }
+
+  /**
+   * Get account funding history
+   */
+  async getAccountFunding(
+    symbol?: string,
+    startTime?: number,
+    endTime?: number,
+    limit: number = 100
+  ): Promise<PaginatedResponse<AccountFundingEntry[]>> {
+    const params: Record<string, string> = {
+      account: this.accountAddress,
+      limit: limit.toString(),
+    };
+    if (symbol) params.symbol = symbol;
+    if (startTime) params.start_time = startTime.toString();
+    if (endTime) params.end_time = endTime.toString();
+
+    return this.get('/api/v1/account/funding', params);
   }
 
   // ========== Getters ==========

@@ -175,11 +175,15 @@ export class Pacifica implements INodeType {
         options: [
           { name: 'Get Account Info', value: 'getAccountInfo', action: 'Get account info' },
           { name: 'Get Trade History', value: 'getTradeHistory', action: 'Get trade history' },
+          { name: 'Get Equity History', value: 'getEquityHistory', action: 'Get account equity history' },
+          { name: 'Get Balance History', value: 'getBalanceHistory', action: 'Get account balance history' },
+          { name: 'Get Account Funding', value: 'getAccountFunding', action: 'Get account funding payments' },
+          { name: 'Request Withdrawal', value: 'requestWithdrawal', action: 'Request a withdrawal' },
         ],
         default: 'getAccountInfo',
       },
 
-      // Trade History Parameters
+      // Account History Parameters
       {
         displayName: 'Symbol (Optional)',
         name: 'tradeSymbol',
@@ -189,7 +193,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['account'],
-            operation: ['getTradeHistory'],
+            operation: ['getTradeHistory', 'getAccountFunding'],
           },
         },
         description: 'Filter by symbol (optional)',
@@ -202,9 +206,10 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['account'],
-            operation: ['getTradeHistory'],
+            operation: ['getTradeHistory', 'getEquityHistory', 'getBalanceHistory', 'getAccountFunding'],
           },
         },
+        description: 'Start timestamp in milliseconds (0 = no filter)',
       },
       {
         displayName: 'End Time (ms)',
@@ -214,9 +219,10 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['account'],
-            operation: ['getTradeHistory'],
+            operation: ['getTradeHistory', 'getEquityHistory', 'getBalanceHistory', 'getAccountFunding'],
           },
         },
+        description: 'End timestamp in milliseconds (0 = now)',
       },
       {
         displayName: 'Limit',
@@ -227,9 +233,23 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['account'],
-            operation: ['getTradeHistory'],
+            operation: ['getTradeHistory', 'getEquityHistory', 'getBalanceHistory', 'getAccountFunding'],
           },
         },
+        description: 'Maximum number of records to return',
+      },
+      {
+        displayName: 'Withdrawal Amount',
+        name: 'withdrawalAmount',
+        type: 'string',
+        default: '0',
+        displayOptions: {
+          show: {
+            resource: ['account'],
+            operation: ['requestWithdrawal'],
+          },
+        },
+        description: 'Amount to withdraw in USD',
       },
 
       // ========== ORDER OPERATIONS ==========
@@ -242,9 +262,16 @@ export class Pacifica implements INodeType {
         options: [
           { name: 'Create Market Order', value: 'createMarketOrder', action: 'Create market order' },
           { name: 'Create Limit Order', value: 'createLimitOrder', action: 'Create limit order' },
+          { name: 'Create Stop Market Order', value: 'createStopMarketOrder', action: 'Create stop market order' },
+          { name: 'Create Stop Limit Order', value: 'createStopLimitOrder', action: 'Create stop limit order' },
+          { name: 'Create Position TP/SL', value: 'createPositionTpSl', action: 'Set take profit and stop loss for position' },
           { name: 'Cancel Order', value: 'cancelOrder', action: 'Cancel order' },
+          { name: 'Cancel Stop Order', value: 'cancelStopOrder', action: 'Cancel stop order' },
           { name: 'Cancel All Orders', value: 'cancelAllOrders', action: 'Cancel all orders' },
+          { name: 'Batch Orders', value: 'batchOrders', action: 'Submit multiple orders at once' },
           { name: 'Get Open Orders', value: 'getOpenOrders', action: 'Get open orders' },
+          { name: 'Get Order History', value: 'getOrderHistory', action: 'Get order history' },
+          { name: 'Get Order By ID', value: 'getOrderById', action: 'Get specific order by ID' },
         ],
         default: 'getOpenOrders',
       },
@@ -259,7 +286,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'cancelOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'createPositionTpSl', 'cancelOrder', 'cancelStopOrder', 'getOrderHistory'],
           },
         },
         description: 'Trading pair symbol',
@@ -276,7 +303,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder'],
           },
         },
       },
@@ -288,10 +315,23 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder'],
           },
         },
         description: 'Order amount in base asset units',
+      },
+      {
+        displayName: 'Stop Price',
+        name: 'stopPrice',
+        type: 'string',
+        default: '0',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createStopMarketOrder', 'createStopLimitOrder'],
+          },
+        },
+        description: 'Trigger price for stop order',
       },
       {
         displayName: 'Price',
@@ -301,7 +341,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createLimitOrder'],
+            operation: ['createLimitOrder', 'createStopLimitOrder'],
           },
         },
         description: 'Limit price for the order',
@@ -314,7 +354,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder'],
+            operation: ['createMarketOrder', 'createStopMarketOrder'],
           },
         },
         description: 'Maximum slippage tolerance (e.g., 0.5 = 0.5%)',
@@ -333,7 +373,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createLimitOrder'],
+            operation: ['createLimitOrder', 'createStopLimitOrder'],
           },
         },
       },
@@ -345,7 +385,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder'],
           },
         },
         description: 'Whether order can only reduce an existing position',
@@ -358,7 +398,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'cancelOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'cancelOrder', 'cancelStopOrder'],
           },
         },
         description: 'Optional client-defined order identifier (UUID)',
@@ -371,10 +411,23 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['cancelOrder'],
+            operation: ['cancelOrder', 'getOrderById'],
           },
         },
-        description: 'Exchange order ID to cancel (use either this or Client Order ID)',
+        description: 'Exchange order ID',
+      },
+      {
+        displayName: 'Stop Order ID',
+        name: 'stopOrderId',
+        type: 'number',
+        default: 0,
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['cancelStopOrder'],
+          },
+        },
+        description: 'Stop order ID to cancel',
       },
       {
         displayName: 'Symbols to Cancel',
@@ -389,6 +442,88 @@ export class Pacifica implements INodeType {
           },
         },
         description: 'Comma-separated list of symbols to cancel orders for (empty = all)',
+      },
+      // TP/SL Parameters
+      {
+        displayName: 'Take Profit Price',
+        name: 'takeProfitPrice',
+        type: 'string',
+        default: '',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createPositionTpSl'],
+          },
+        },
+        description: 'Take profit trigger price (leave empty to skip)',
+      },
+      {
+        displayName: 'Take Profit Limit Price',
+        name: 'takeProfitLimitPrice',
+        type: 'string',
+        default: '',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createPositionTpSl'],
+          },
+        },
+        description: 'Limit price for take profit (optional, market if empty)',
+      },
+      {
+        displayName: 'Stop Loss Price',
+        name: 'stopLossPrice',
+        type: 'string',
+        default: '',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createPositionTpSl'],
+          },
+        },
+        description: 'Stop loss trigger price (leave empty to skip)',
+      },
+      {
+        displayName: 'Stop Loss Limit Price',
+        name: 'stopLossLimitPrice',
+        type: 'string',
+        default: '',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createPositionTpSl'],
+          },
+        },
+        description: 'Limit price for stop loss (optional, market if empty)',
+      },
+      // Order History Parameters
+      {
+        displayName: 'Limit',
+        name: 'orderHistoryLimit',
+        type: 'number',
+        default: 100,
+        typeOptions: { minValue: 1, maxValue: 1000 },
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['getOrderHistory'],
+          },
+        },
+        description: 'Maximum number of orders to return',
+      },
+      // Batch Orders Parameters
+      {
+        displayName: 'Batch Actions (JSON)',
+        name: 'batchActionsJson',
+        type: 'json',
+        default: '[]',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['batchOrders'],
+          },
+        },
+        description: 'Array of order actions. Each action: {type: "create_limit"|"create_market"|"cancel", symbol, side?, amount?, price?, slippage_percent?, tif?, reduce_only?, order_id?, client_order_id?}. Max 10 actions.',
       },
 
       // ========== POSITION OPERATIONS ==========
@@ -647,6 +782,49 @@ export class Pacifica implements INodeType {
             );
             result = response.data;
           }
+
+          if (operation === 'getEquityHistory') {
+            const startTime = this.getNodeParameter('tradeStartTime', i) as number;
+            const endTime = this.getNodeParameter('tradeEndTime', i) as number;
+            const limit = this.getNodeParameter('tradeLimit', i) as number;
+            const response = await client.getEquityHistory(
+              startTime || undefined,
+              endTime || undefined,
+              limit
+            );
+            result = response.data;
+          }
+
+          if (operation === 'getBalanceHistory') {
+            const startTime = this.getNodeParameter('tradeStartTime', i) as number;
+            const endTime = this.getNodeParameter('tradeEndTime', i) as number;
+            const limit = this.getNodeParameter('tradeLimit', i) as number;
+            const response = await client.getBalanceHistory(
+              startTime || undefined,
+              endTime || undefined,
+              limit
+            );
+            result = response.data;
+          }
+
+          if (operation === 'getAccountFunding') {
+            const symbol = this.getNodeParameter('tradeSymbol', i) as string;
+            const startTime = this.getNodeParameter('tradeStartTime', i) as number;
+            const endTime = this.getNodeParameter('tradeEndTime', i) as number;
+            const limit = this.getNodeParameter('tradeLimit', i) as number;
+            const response = await client.getAccountFunding(
+              symbol || undefined,
+              startTime || undefined,
+              endTime || undefined,
+              limit
+            );
+            result = response.data;
+          }
+
+          if (operation === 'requestWithdrawal') {
+            const amount = this.getNodeParameter('withdrawalAmount', i) as string;
+            result = await client.requestWithdrawal(amount);
+          }
         }
 
         // ========== ORDER OPERATIONS ==========
@@ -713,6 +891,134 @@ export class Pacifica implements INodeType {
               : undefined;
 
             result = await client.cancelAllOrders(symbols);
+          }
+
+          if (operation === 'createStopMarketOrder') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
+            const amount = this.getNodeParameter('amount', i) as string;
+            const stopPrice = this.getNodeParameter('stopPrice', i) as string;
+            const slippage = this.getNodeParameter('slippagePercent', i) as string;
+            const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
+            const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
+
+            result = await client.createStopMarketOrder(
+              symbol.toUpperCase(),
+              side,
+              amount,
+              stopPrice,
+              slippage,
+              reduceOnly,
+              clientOrderId || undefined
+            );
+          }
+
+          if (operation === 'createStopLimitOrder') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
+            const amount = this.getNodeParameter('amount', i) as string;
+            const stopPrice = this.getNodeParameter('stopPrice', i) as string;
+            const price = this.getNodeParameter('price', i) as string;
+            const tif = this.getNodeParameter('tif', i) as 'GTC' | 'IOC' | 'ALO' | 'TOB';
+            const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
+            const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
+
+            result = await client.createStopLimitOrder(
+              symbol.toUpperCase(),
+              side,
+              amount,
+              stopPrice,
+              price,
+              tif,
+              reduceOnly,
+              clientOrderId || undefined
+            );
+          }
+
+          if (operation === 'createPositionTpSl') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const tpPrice = this.getNodeParameter('takeProfitPrice', i) as string;
+            const tpLimitPrice = this.getNodeParameter('takeProfitLimitPrice', i) as string;
+            const slPrice = this.getNodeParameter('stopLossPrice', i) as string;
+            const slLimitPrice = this.getNodeParameter('stopLossLimitPrice', i) as string;
+
+            const takeProfit = tpPrice ? {
+              stop_price: tpPrice,
+              ...(tpLimitPrice ? { limit_price: tpLimitPrice } : {}),
+            } : undefined;
+
+            const stopLoss = slPrice ? {
+              stop_price: slPrice,
+              ...(slLimitPrice ? { limit_price: slLimitPrice } : {}),
+            } : undefined;
+
+            result = await client.createPositionTpSl(
+              symbol.toUpperCase(),
+              takeProfit,
+              stopLoss
+            );
+          }
+
+          if (operation === 'cancelStopOrder') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const stopOrderId = this.getNodeParameter('stopOrderId', i) as number;
+            const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
+
+            result = await client.cancelStopOrder(
+              symbol.toUpperCase(),
+              stopOrderId || undefined,
+              clientOrderId || undefined
+            );
+          }
+
+          if (operation === 'getOrderHistory') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const limit = this.getNodeParameter('orderHistoryLimit', i) as number;
+            const response = await client.getOrderHistory(
+              symbol || undefined,
+              undefined,
+              undefined,
+              limit
+            );
+            result = response.data;
+          }
+
+          if (operation === 'getOrderById') {
+            const orderId = this.getNodeParameter('orderId', i) as number;
+            const response = await client.getOrderById(orderId);
+            result = response.data;
+          }
+
+          if (operation === 'batchOrders') {
+            const actionsJson = this.getNodeParameter('batchActionsJson', i) as string;
+            let actions: Array<{
+              type: 'create_limit' | 'create_market' | 'cancel';
+              symbol: string;
+              side?: 'bid' | 'ask';
+              amount?: string;
+              price?: string;
+              slippage_percent?: string;
+              tif?: 'GTC' | 'IOC' | 'ALO' | 'TOB';
+              reduce_only?: boolean;
+              order_id?: number;
+              client_order_id?: string;
+            }>;
+
+            try {
+              actions = typeof actionsJson === 'string' ? JSON.parse(actionsJson) : actionsJson;
+            } catch {
+              throw new NodeOperationError(this.getNode(), 'Invalid JSON format for batch actions');
+            }
+
+            if (!Array.isArray(actions) || actions.length === 0) {
+              throw new NodeOperationError(this.getNode(), 'Batch actions must be a non-empty array');
+            }
+
+            if (actions.length > 10) {
+              throw new NodeOperationError(this.getNode(), 'Maximum 10 actions per batch');
+            }
+
+            result = await client.batchOrders(actions);
           }
         }
 

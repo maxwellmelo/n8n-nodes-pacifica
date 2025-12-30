@@ -837,8 +837,8 @@ export class Pacifica implements INodeType {
           if (operation === 'createMarketOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
             const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
-            const amount = this.getNodeParameter('amount', i) as string;
-            const slippage = this.getNodeParameter('slippagePercent', i) as string;
+            const amount = String(this.getNodeParameter('amount', i));
+            const slippage = String(this.getNodeParameter('slippagePercent', i));
             const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
             const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
 
@@ -855,8 +855,8 @@ export class Pacifica implements INodeType {
           if (operation === 'createLimitOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
             const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
-            const price = this.getNodeParameter('price', i) as string;
-            const amount = this.getNodeParameter('amount', i) as string;
+            const price = String(this.getNodeParameter('price', i));
+            const amount = String(this.getNodeParameter('amount', i));
             const tif = this.getNodeParameter('tif', i) as 'GTC' | 'IOC' | 'ALO' | 'TOB';
             const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
             const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
@@ -896,9 +896,9 @@ export class Pacifica implements INodeType {
           if (operation === 'createStopMarketOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
             const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
-            const amount = this.getNodeParameter('amount', i) as string;
-            const stopPrice = this.getNodeParameter('stopPrice', i) as string;
-            const slippage = this.getNodeParameter('slippagePercent', i) as string;
+            const amount = String(this.getNodeParameter('amount', i));
+            const stopPrice = String(this.getNodeParameter('stopPrice', i));
+            const slippage = String(this.getNodeParameter('slippagePercent', i));
             const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
             const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
 
@@ -916,9 +916,9 @@ export class Pacifica implements INodeType {
           if (operation === 'createStopLimitOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
             const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
-            const amount = this.getNodeParameter('amount', i) as string;
-            const stopPrice = this.getNodeParameter('stopPrice', i) as string;
-            const price = this.getNodeParameter('price', i) as string;
+            const amount = String(this.getNodeParameter('amount', i));
+            const stopPrice = String(this.getNodeParameter('stopPrice', i));
+            const price = String(this.getNodeParameter('price', i));
             const tif = this.getNodeParameter('tif', i) as 'GTC' | 'IOC' | 'ALO' | 'TOB';
             const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
             const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
@@ -1048,7 +1048,7 @@ export class Pacifica implements INodeType {
 
           if (operation === 'closePosition') {
             const symbol = this.getNodeParameter('positionSymbol', i) as string;
-            const slippage = this.getNodeParameter('closeSlippage', i) as string;
+            const slippage = String(this.getNodeParameter('closeSlippage', i));
 
             // Get current position
             const positionsResponse = await client.getPositions() as PacificaResponse<Position[]>;

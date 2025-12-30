@@ -287,22 +287,19 @@ export interface SubaccountTransferRequest {
 // ========== Signing Types ==========
 
 export type SigningOperationType =
-  | 'create_market_order'
-  | 'create_limit_order'
-  | 'create_stop_order'
-  | 'create_stop_limit_order'
-  | 'create_stop_market_order'
-  | 'create_tp_sl'
-  | 'cancel_order'
-  | 'cancel_stop_order'
-  | 'cancel_all_orders'
-  | 'edit_order'
-  | 'batch_orders'
-  | 'update_leverage'
-  | 'update_margin_mode'
-  | 'create_subaccount'
-  | 'transfer_funds'
-  | 'request_withdrawal';
+  | 'create_order'           // Limit orders → /api/v1/orders/create
+  | 'create_market_order'    // Market orders → /api/v1/orders/create_market
+  | 'create_stop_order'      // Stop orders → /api/v1/orders/stop
+  | 'set_tp_sl'              // TP/SL → /api/v1/orders/tp_sl
+  | 'cancel_order'           // Cancel → /api/v1/orders/cancel
+  | 'cancel_stop_order'      // Cancel stop → /api/v1/orders/stop/cancel
+  | 'cancel_all_orders'      // Cancel all → /api/v1/orders/cancel_all
+  | 'update_leverage'        // Leverage → /api/v1/account/leverage
+  | 'update_margin_mode'     // Margin mode → /api/v1/account/margin_mode
+  | 'withdraw'               // Withdrawal → /api/v1/account/withdraw
+  | 'create_subaccount'      // Subaccount → /api/v1/subaccounts/create
+  | 'transfer'               // Transfer → /api/v1/subaccounts/transfer
+  | 'batch_orders';          // Batch (individual ops signed separately)
 
 export interface SignedRequest {
   account: string;

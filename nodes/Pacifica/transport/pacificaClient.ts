@@ -468,7 +468,7 @@ export class PacificaClient {
     if (takeProfit) payload.take_profit = takeProfit;
     if (stopLoss) payload.stop_loss = stopLoss;
 
-    return this.post('/api/v1/orders/create', payload, true, 'create_limit_order');
+    return this.post('/api/v1/orders/create', payload, true, 'create_order');
   }
 
   /**
@@ -567,7 +567,7 @@ export class PacificaClient {
         amount,
       },
       true,
-      'transfer_funds'
+      'transfer'
     );
   }
 
@@ -644,7 +644,7 @@ export class PacificaClient {
     if (takeProfit) payload.take_profit = takeProfit;
     if (stopLoss) payload.stop_loss = stopLoss;
 
-    return this.post('/api/v1/orders/tp_sl', payload, true, 'create_tp_sl');
+    return this.post('/api/v1/orders/tp_sl', payload, true, 'set_tp_sl');
   }
 
   /**
@@ -734,7 +734,7 @@ export class PacificaClient {
 
           return {
             type: 'Create',
-            data: await this.createSignedRequest(payload, 'create_limit_order'),
+            data: await this.createSignedRequest(payload, 'create_order'),
           };
         } else if (action.type === 'create_market') {
           payload.side = action.side;
@@ -773,7 +773,7 @@ export class PacificaClient {
       amount,
     };
 
-    return this.post('/api/v1/withdrawal', payload, true, 'request_withdrawal');
+    return this.post('/api/v1/account/withdraw', payload, true, 'withdraw');
   }
 
   // ========== Account Histories ==========

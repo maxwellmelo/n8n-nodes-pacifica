@@ -46,7 +46,7 @@ export class Pacifica implements INodeType {
           { name: 'Account', value: 'account' },
           { name: 'Order', value: 'order' },
           { name: 'Position', value: 'position' },
-          { name: 'Subaccount', value: 'subaccount' },
+          // Note: Subaccount operations removed - Pacifica API requires dual-signature system not compatible with n8n
         ],
         default: 'marketData',
       },
@@ -436,7 +436,7 @@ export class Pacifica implements INodeType {
         description: 'Exchange order ID',
       },
       {
-        displayName: 'Stop Order ID',
+        displayName: 'Order ID',
         name: 'stopOrderId',
         type: 'number',
         default: 0,
@@ -446,7 +446,7 @@ export class Pacifica implements INodeType {
             operation: ['cancelStopOrder'],
           },
         },
-        description: 'Stop order ID to cancel',
+        description: 'Order ID of the stop order to cancel (uses order_id field)',
       },
       {
         displayName: 'Symbols to Cancel',
@@ -649,16 +649,17 @@ export class Pacifica implements INodeType {
         name: 'marginMode',
         type: 'options',
         options: [
-          { name: 'Cross', value: 'cross' },
-          { name: 'Isolated', value: 'isolated' },
+          { name: 'Cross', value: 'false' },
+          { name: 'Isolated', value: 'true' },
         ],
-        default: 'cross',
+        default: 'false',
         displayOptions: {
           show: {
             resource: ['position'],
             operation: ['updateMarginMode'],
           },
         },
+        description: 'Cross margin shares margin across positions, Isolated uses dedicated margin per position',
       },
       {
         displayName: 'Slippage %',
@@ -673,74 +674,7 @@ export class Pacifica implements INodeType {
         },
         description: 'Maximum slippage for close position market order',
       },
-
-      // ========== SUBACCOUNT OPERATIONS ==========
-      {
-        displayName: 'Operation',
-        name: 'operation',
-        type: 'options',
-        noDataExpression: true,
-        displayOptions: { show: { resource: ['subaccount'] } },
-        options: [
-          { name: 'Create Subaccount', value: 'createSubaccount', action: 'Create subaccount' },
-          { name: 'List Subaccounts', value: 'listSubaccounts', action: 'List subaccounts' },
-          { name: 'Transfer Funds', value: 'transferFunds', action: 'Transfer funds between subaccounts' },
-        ],
-        default: 'listSubaccounts',
-      },
-
-      // Subaccount Parameters
-      {
-        displayName: 'Subaccount Name',
-        name: 'subaccountName',
-        type: 'string',
-        default: '',
-        displayOptions: {
-          show: {
-            resource: ['subaccount'],
-            operation: ['createSubaccount'],
-          },
-        },
-      },
-      {
-        displayName: 'From Account',
-        name: 'fromAccount',
-        type: 'string',
-        default: '',
-        displayOptions: {
-          show: {
-            resource: ['subaccount'],
-            operation: ['transferFunds'],
-          },
-        },
-        description: 'Source account address',
-      },
-      {
-        displayName: 'To Account',
-        name: 'toAccount',
-        type: 'string',
-        default: '',
-        displayOptions: {
-          show: {
-            resource: ['subaccount'],
-            operation: ['transferFunds'],
-          },
-        },
-        description: 'Destination account address',
-      },
-      {
-        displayName: 'Transfer Amount',
-        name: 'transferAmount',
-        type: 'string',
-        default: '0',
-        displayOptions: {
-          show: {
-            resource: ['subaccount'],
-            operation: ['transferFunds'],
-          },
-        },
-        description: 'Amount to transfer (USD)',
-      },
+      // Note: Subaccount operations removed - Pacifica API requires dual-signature system not compatible with n8n credentials
     ],
   };
 
@@ -1227,9 +1161,10 @@ export class Pacifica implements INodeType {
 
           if (operation === 'updateMarginMode') {
             const symbol = this.getNodeParameter('positionSymbol', i) as string;
-            const marginMode = this.getNodeParameter('marginMode', i) as 'cross' | 'isolated';
+            const marginModeValue = this.getNodeParameter('marginMode', i) as string;
+            const isIsolated = marginModeValue === 'true';
 
-            result = await client.updateMarginMode(symbol.toUpperCase(), marginMode);
+            result = await client.updateMarginMode(symbol.toUpperCase(), isIsolated);
           }
 
           if (operation === 'closePosition') {
@@ -1261,27 +1196,7 @@ export class Pacifica implements INodeType {
             );
           }
         }
-
-        // ========== SUBACCOUNT OPERATIONS ==========
-        if (resource === 'subaccount') {
-          if (operation === 'listSubaccounts') {
-            const response = await client.listSubaccounts();
-            result = response.data;
-          }
-
-          if (operation === 'createSubaccount') {
-            const name = this.getNodeParameter('subaccountName', i) as string;
-            result = await client.createSubaccount(name);
-          }
-
-          if (operation === 'transferFunds') {
-            const fromAccount = this.getNodeParameter('fromAccount', i) as string;
-            const toAccount = this.getNodeParameter('toAccount', i) as string;
-            const amount = this.getNodeParameter('transferAmount', i) as string;
-
-            result = await client.transferFunds(fromAccount, toAccount, amount);
-          }
-        }
+        // Note: Subaccount operations removed - Pacifica API requires dual-signature system
 
         returnData.push({
           json: result as INodeExecutionData['json'],

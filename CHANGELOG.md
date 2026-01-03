@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-01-03
+
+### Breaking Changes
+- **Removed Subaccount operations** - Pacifica API requires dual-signature authentication not compatible with n8n's credential system
+
+### Fixed (Critical API Compatibility)
+- **Update Margin Mode**: Fixed field `margin_mode` → `is_isolated` (boolean) and endpoint `/api/v1/account/margin_mode` → `/api/v1/account/margin`
+- **Cancel Stop Order**: Fixed field `stop_order_id` → `order_id`
+- **Position TP/SL**: Fixed signing type `set_tp_sl` → `set_position_tpsl` and endpoint `/api/v1/orders/tp_sl` → `/api/v1/positions/tpsl`
+
+### Changed
+- Margin Mode UI now shows "Cross" / "Isolated" options that map to boolean values
+- Cancel Stop Order field renamed for clarity
+
 ## [0.3.7] - 2026-01-03
 
 ### Fixed

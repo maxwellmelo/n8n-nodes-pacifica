@@ -526,53 +526,18 @@ export class PacificaClient {
    */
   async updateMarginMode(
     symbol: string,
-    marginMode: 'cross' | 'isolated'
+    isIsolated: boolean
   ): Promise<{ success: boolean }> {
     const payload = {
       symbol,
-      margin_mode: marginMode,
+      is_isolated: isIsolated,
     };
 
-    return this.post('/api/v1/account/margin_mode', payload, true, 'update_margin_mode');
+    return this.post('/api/v1/account/margin', payload, true, 'update_margin_mode');
   }
 
-  // ========== Subaccount Methods ==========
-
-  /**
-   * Create a subaccount
-   */
-  async createSubaccount(name: string): Promise<{ subaccount_id: string }> {
-    return this.post('/api/v1/subaccounts/create', { name }, true, 'create_subaccount');
-  }
-
-  /**
-   * List subaccounts
-   */
-  async listSubaccounts(): Promise<PacificaResponse<Array<{ id: string; name: string }>>> {
-    return this.get('/api/v1/subaccounts', {
-      account: this.accountAddress,
-    });
-  }
-
-  /**
-   * Transfer funds between subaccounts
-   */
-  async transferFunds(
-    fromAccount: string,
-    toAccount: string,
-    amount: string
-  ): Promise<{ success: boolean }> {
-    return this.post(
-      '/api/v1/subaccounts/transfer',
-      {
-        from_account: fromAccount,
-        to_account: toAccount,
-        amount,
-      },
-      true,
-      'transfer'
-    );
-  }
+  // Note: Subaccount operations removed - Pacifica API requires dual-signature system
+  // not compatible with n8n's single credential model
 
   // ========== Stop Orders ==========
 
@@ -652,7 +617,7 @@ export class PacificaClient {
     if (takeProfit) payload.take_profit = takeProfit;
     if (stopLoss) payload.stop_loss = stopLoss;
 
-    return this.post('/api/v1/orders/tp_sl', payload, true, 'set_tp_sl');
+    return this.post('/api/v1/positions/tpsl', payload, true, 'set_position_tpsl');
   }
 
   /**
@@ -660,14 +625,15 @@ export class PacificaClient {
    */
   async cancelStopOrder(
     symbol: string,
-    stopOrderId?: number,
+    orderId?: number,
     clientOrderId?: string
   ): Promise<{ success: boolean }> {
     const payload: Record<string, unknown> = {
       symbol,
     };
 
-    if (stopOrderId) payload.stop_order_id = stopOrderId;
+    // Note: API uses order_id (not stop_order_id) for canceling stop orders
+    if (orderId) payload.order_id = orderId;
     if (clientOrderId) payload.client_order_id = clientOrderId;
 
     return this.post('/api/v1/orders/stop/cancel', payload, true, 'cancel_stop_order');

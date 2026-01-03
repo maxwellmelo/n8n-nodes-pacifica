@@ -54,11 +54,6 @@ npm install n8n-nodes-pacifica
 - **Update Margin Mode** - Switch between cross and isolated margin
 - **Close Position** - Close a position with a market order
 
-### Subaccounts (Authenticated)
-- **Create Subaccount** - Create a new subaccount
-- **List Subaccounts** - List all subaccounts
-- **Transfer Funds** - Transfer funds between subaccounts
-
 ## Credentials
 
 To use this node, you need to set up API credentials:

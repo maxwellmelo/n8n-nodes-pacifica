@@ -970,7 +970,9 @@ export class Pacifica implements INodeType {
 
           if (operation === 'createStopMarketOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
-            const side = this.getNodeParameter('stopOrderSide', i) as 'long' | 'short';
+            const positionSide = this.getNodeParameter('stopOrderSide', i) as 'long' | 'short';
+            // Long position closes with ask (sell), Short position closes with bid (buy)
+            const side: 'bid' | 'ask' = positionSide === 'long' ? 'ask' : 'bid';
             const amount = String(this.getNodeParameter('amount', i));
             const stopPrice = String(this.getNodeParameter('stopPrice', i));
             const slippage = String(this.getNodeParameter('slippagePercent', i));
@@ -990,7 +992,9 @@ export class Pacifica implements INodeType {
 
           if (operation === 'createStopLimitOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
-            const side = this.getNodeParameter('stopOrderSide', i) as 'long' | 'short';
+            const positionSide = this.getNodeParameter('stopOrderSide', i) as 'long' | 'short';
+            // Long position closes with ask (sell), Short position closes with bid (buy)
+            const side: 'bid' | 'ask' = positionSide === 'long' ? 'ask' : 'bid';
             const amount = String(this.getNodeParameter('amount', i));
             const stopPrice = String(this.getNodeParameter('stopPrice', i));
             const price = String(this.getNodeParameter('price', i));
@@ -1103,8 +1107,8 @@ export class Pacifica implements INodeType {
             const stopLossJson = this.getNodeParameter('stopLossJson', i) as string;
             const slippage = String(this.getNodeParameter('multiSlippage', i));
 
-            // Stop orders use the position side directly (long/short, not bid/ask)
-            const orderSide: 'long' | 'short' = positionSide;
+            // Long position closes with ask (sell), Short position closes with bid (buy)
+            const orderSide: 'bid' | 'ask' = positionSide === 'long' ? 'ask' : 'bid';
 
             // Parse TPs
             let takeProfits: Array<{ price: string; amount: string; limit_price?: string }> = [];

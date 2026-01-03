@@ -304,9 +304,26 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder'],
           },
         },
+      },
+      {
+        displayName: 'Position Side',
+        name: 'stopOrderSide',
+        type: 'options',
+        options: [
+          { name: 'Long (close long position)', value: 'long' },
+          { name: 'Short (close short position)', value: 'short' },
+        ],
+        default: 'long',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createStopMarketOrder', 'createStopLimitOrder'],
+          },
+        },
+        description: 'Position side this stop order is for',
       },
       {
         displayName: 'Amount',
@@ -953,7 +970,7 @@ export class Pacifica implements INodeType {
 
           if (operation === 'createStopMarketOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
-            const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
+            const side = this.getNodeParameter('stopOrderSide', i) as 'long' | 'short';
             const amount = String(this.getNodeParameter('amount', i));
             const stopPrice = String(this.getNodeParameter('stopPrice', i));
             const slippage = String(this.getNodeParameter('slippagePercent', i));
@@ -973,7 +990,7 @@ export class Pacifica implements INodeType {
 
           if (operation === 'createStopLimitOrder') {
             const symbol = this.getNodeParameter('orderSymbol', i) as string;
-            const side = this.getNodeParameter('side', i) as 'bid' | 'ask';
+            const side = this.getNodeParameter('stopOrderSide', i) as 'long' | 'short';
             const amount = String(this.getNodeParameter('amount', i));
             const stopPrice = String(this.getNodeParameter('stopPrice', i));
             const price = String(this.getNodeParameter('price', i));
@@ -1086,8 +1103,8 @@ export class Pacifica implements INodeType {
             const stopLossJson = this.getNodeParameter('stopLossJson', i) as string;
             const slippage = String(this.getNodeParameter('multiSlippage', i));
 
-            // Determine order side: Long positions close with ask (sell), Short with bid (buy)
-            const orderSide: 'bid' | 'ask' = positionSide === 'long' ? 'ask' : 'bid';
+            // Stop orders use the position side directly (long/short, not bid/ask)
+            const orderSide: 'long' | 'short' = positionSide;
 
             // Parse TPs
             let takeProfits: Array<{ price: string; amount: string; limit_price?: string }> = [];

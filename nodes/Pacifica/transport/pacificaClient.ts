@@ -575,10 +575,11 @@ export class PacificaClient {
 
   /**
    * Create a stop market order
+   * Note: Stop orders use 'long'/'short' for side, not 'bid'/'ask'
    */
   async createStopMarketOrder(
     symbol: string,
-    side: 'bid' | 'ask',
+    side: 'long' | 'short',
     amount: string,
     stopPrice: string,
     slippagePercent: string,
@@ -605,10 +606,11 @@ export class PacificaClient {
 
   /**
    * Create a stop limit order
+   * Note: Stop orders use 'long'/'short' for side, not 'bid'/'ask'
    */
   async createStopLimitOrder(
     symbol: string,
-    side: 'bid' | 'ask',
+    side: 'long' | 'short',
     amount: string,
     stopPrice: string,
     limitPrice: string,
@@ -620,7 +622,6 @@ export class PacificaClient {
       stop_price: stopPrice,
       limit_price: limitPrice,
       amount,
-      tif,
     };
 
     if (clientOrderId) stopOrder.client_order_id = clientOrderId;

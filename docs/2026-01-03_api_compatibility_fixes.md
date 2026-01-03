@@ -5,6 +5,35 @@ Major fixes to ensure all API calls match the official Pacifica API documentatio
 
 ---
 
+## Version 0.4.2
+
+### Fixed: Close Position - Side Detection (Corrected)
+
+**File:** `nodes/Pacifica/Pacifica.node.ts`
+
+**Before (v0.3.6 - still wrong):**
+```typescript
+const isLong = position.side === 'long';  // ❌ Wrong: API returns 'bid'/'ask', not 'long'/'short'
+const closeSide: 'bid' | 'ask' = isLong ? 'ask' : 'bid';
+```
+
+**After:**
+```typescript
+// API returns 'bid' for LONG positions (bought), 'ask' for SHORT positions (sold)
+// To close: LONG (bid) → sell with 'ask', SHORT (ask) → buy with 'bid'
+const closeSide: 'bid' | 'ask' = position.side === 'bid' ? 'ask' : 'bid';
+```
+
+**Why:**
+- API `position.side` field returns `"bid"` or `"ask"`, NOT `"long"` or `"short"`
+- `bid` = bought = LONG position
+- `ask` = sold = SHORT position
+- To close a position, use the opposite side
+
+**API Documentation:** Position response shows `side: "ask"` not `side: "short"`
+
+---
+
 ## Version 0.4.1
 
 ### Fixed: Cancel All Orders - Field Name
@@ -160,9 +189,9 @@ const stopOrder = {
 
 ---
 
-## Version 0.3.6
+## Version 0.3.6 (Superseded by 0.4.2)
 
-### Fixed: Close Position - Side Detection
+### Fixed: Close Position - Side Detection (Partially Fixed)
 
 **File:** `nodes/Pacifica/Pacifica.node.ts`
 
@@ -172,12 +201,12 @@ const positionSize = parseFloat(position.amount);
 const isLong = positionSize > 0;  // ❌ Wrong: amount is always positive
 ```
 
-**After:**
+**After (v0.3.6):**
 ```typescript
-const isLong = position.side === 'long';  // ✓ Correct: use side field
+const isLong = position.side === 'long';  // ⚠️ Still wrong: API uses 'bid'/'ask'
 ```
 
-**Why:** Position `amount` is always positive. The `side` field indicates direction ('long' or 'short').
+**Note:** This fix was incomplete. See v0.4.2 for the correct implementation using `position.side === 'bid'`.
 
 ---
 
@@ -185,13 +214,14 @@ const isLong = position.side === 'long';  // ✓ Correct: use side field
 
 | Version | File | Changes |
 |---------|------|---------|
+| 0.4.2 | `Pacifica.node.ts` | Close position: `side === 'long'` → `side === 'bid'` |
 | 0.4.1 | `pacificaClient.ts` | Cancel all orders: symbols → symbol |
 | 0.4.1 | `Pacifica.node.ts` | UI updated for single symbol |
 | 0.4.0 | `pacificaClient.ts` | Margin mode, cancel stop order, TP/SL fixes |
 | 0.4.0 | `Pacifica.node.ts` | Subaccounts removed, margin mode UI |
 | 0.4.0 | `types/index.ts` | Signing types updated |
 | 0.3.7 | `pacificaClient.ts` | TIF removed from stop orders |
-| 0.3.6 | `Pacifica.node.ts` | Close position side fix |
+| 0.3.6 | `Pacifica.node.ts` | Close position side fix (superseded by 0.4.2) |
 
 ---
 

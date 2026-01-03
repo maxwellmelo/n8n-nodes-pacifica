@@ -1183,10 +1183,9 @@ export class Pacifica implements INodeType {
             }
 
             const amount = position.amount;
-            // Use position.side field to determine direction
-            // Long positions are closed with 'ask' (sell), Short with 'bid' (buy)
-            const isLong = position.side === 'long';
-            const closeSide: 'bid' | 'ask' = isLong ? 'ask' : 'bid';
+            // API returns 'bid' for LONG positions (bought), 'ask' for SHORT positions (sold)
+            // To close: LONG (bid) → sell with 'ask', SHORT (ask) → buy with 'bid'
+            const closeSide: 'bid' | 'ask' = position.side === 'bid' ? 'ask' : 'bid';
 
             result = await client.createMarketOrder(
               symbol.toUpperCase(),

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2026-01-03
+
+### Fixed
+- **Close Position**: Fixed position side detection - API returns `bid`/`ask` not `long`/`short`
+- `bid` = LONG position (bought) → close with `ask` (sell)
+- `ask` = SHORT position (sold) → close with `bid` (buy)
+- Fixes "Invalid reduce-only order side" error
+
 ## [0.4.1] - 2026-01-03
 
 ### Fixed

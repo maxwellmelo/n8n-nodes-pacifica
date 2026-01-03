@@ -1249,14 +1249,15 @@ export class Pacifica implements INodeType {
               throw new NodeOperationError(this.getNode(), `No open position found for ${symbol}`);
             }
 
-            const positionSize = parseFloat(position.amount);
-            const isLong = positionSize > 0;
-            const amount = Math.abs(positionSize).toString();
+            const amount = position.amount;
+            // Use position.side field to determine direction
+            // Long positions are closed with 'ask' (sell), Short with 'bid' (buy)
+            const isLong = position.side === 'long';
+            const closeSide: 'bid' | 'ask' = isLong ? 'ask' : 'bid';
 
-            // To close: if long, sell (ask); if short, buy (bid)
             result = await client.createMarketOrder(
               symbol.toUpperCase(),
-              isLong ? 'ask' : 'bid',
+              closeSide,
               amount,
               slippage,
               true // Always reduce only for close

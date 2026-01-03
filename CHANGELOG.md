@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.6] - 2026-01-03
+
+### Fixed
+- Close Position now uses `position.side` field instead of amount sign to determine order side
+- Fixes "Invalid reduce-only order side: must be opposite to position side" error
+
 ## [0.3.5] - 2026-01-03
 
 ### Fixed

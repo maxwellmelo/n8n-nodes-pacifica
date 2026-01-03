@@ -623,6 +623,7 @@ export class PacificaClient {
       stop_price: stopPrice,
       limit_price: limitPrice,
       amount,
+      tif,
     };
 
     if (clientOrderId) stopOrder.client_order_id = clientOrderId;

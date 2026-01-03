@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-01-03
+
+### Fixed
+- **Cancel All Orders**: Fixed field `symbols` (array) → `symbol` (string singular)
+- Fixes "Verification failed" error on cancel all orders
+
 ## [0.4.0] - 2026-01-03
 
 ### Breaking Changes

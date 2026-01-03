@@ -449,18 +449,18 @@ export class Pacifica implements INodeType {
         description: 'Order ID of the stop order to cancel (uses order_id field)',
       },
       {
-        displayName: 'Symbols to Cancel',
+        displayName: 'Symbol to Cancel',
         name: 'cancelSymbols',
         type: 'string',
         default: '',
-        placeholder: 'BTC,ETH,SOL (leave empty for all)',
+        placeholder: 'BTC (leave empty for all symbols)',
         displayOptions: {
           show: {
             resource: ['order'],
             operation: ['cancelAllOrders'],
           },
         },
-        description: 'Comma-separated list of symbols to cancel orders for (empty = all)',
+        description: 'Symbol to cancel orders for (empty = cancel all symbols)',
       },
       // TP/SL Parameters
       {
@@ -896,11 +896,12 @@ export class Pacifica implements INodeType {
 
           if (operation === 'cancelAllOrders') {
             const cancelSymbolsStr = this.getNodeParameter('cancelSymbols', i) as string;
-            const symbols = cancelSymbolsStr
-              ? cancelSymbolsStr.split(',').map(s => s.trim().toUpperCase())
+            // API only accepts single symbol, use first one if provided
+            const symbol = cancelSymbolsStr
+              ? cancelSymbolsStr.split(',')[0].trim().toUpperCase()
               : undefined;
 
-            result = await client.cancelAllOrders(symbols);
+            result = await client.cancelAllOrders(symbol);
           }
 
           if (operation === 'createStopMarketOrder') {

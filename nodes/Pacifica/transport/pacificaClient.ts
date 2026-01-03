@@ -491,14 +491,15 @@ export class PacificaClient {
 
   /**
    * Cancel all orders
+   * Note: API uses 'symbol' (singular string) not 'symbols' (array)
    */
-  async cancelAllOrders(symbols?: string[], excludeReduceOnly: boolean = false): Promise<{ success: boolean }> {
+  async cancelAllOrders(symbol?: string, excludeReduceOnly: boolean = false): Promise<{ success: boolean }> {
     const payload: Record<string, unknown> = {
-      all_symbols: !symbols || symbols.length === 0,
+      all_symbols: !symbol,
       exclude_reduce_only: excludeReduceOnly,
     };
-    if (symbols && symbols.length > 0) {
-      payload.symbols = symbols;
+    if (symbol) {
+      payload.symbol = symbol;
     }
 
     return this.post('/api/v1/orders/cancel_all', payload, true, 'cancel_all_orders');

@@ -391,9 +391,10 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createLimitOrder', 'createStopLimitOrder'],
+            operation: ['createLimitOrder'],
           },
         },
+        description: 'Time in force (only for limit orders, not stop orders)',
       },
       {
         displayName: 'Reduce Only',
@@ -998,7 +999,6 @@ export class Pacifica implements INodeType {
             const amount = String(this.getNodeParameter('amount', i));
             const stopPrice = String(this.getNodeParameter('stopPrice', i));
             const price = String(this.getNodeParameter('price', i));
-            const tif = this.getNodeParameter('tif', i) as 'GTC' | 'IOC' | 'ALO' | 'TOB';
             const reduceOnly = this.getNodeParameter('reduceOnly', i) as boolean;
             const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
 
@@ -1008,7 +1008,6 @@ export class Pacifica implements INodeType {
               amount,
               stopPrice,
               price,
-              tif,
               reduceOnly,
               clientOrderId || undefined
             );
@@ -1144,7 +1143,6 @@ export class Pacifica implements INodeType {
                     String(tp.amount),
                     String(tp.price),
                     String(tp.limit_price),
-                    'GTC',
                     true // reduce_only
                   );
                   results.push({ type: `TP${tpIndex + 1}`, success: true, stop_order_id: response.stop_order_id });
@@ -1176,7 +1174,6 @@ export class Pacifica implements INodeType {
                     String(stopLoss.amount),
                     String(stopLoss.price),
                     String(stopLoss.limit_price),
-                    'GTC',
                     true // reduce_only
                   );
                   results.push({ type: 'SL', success: true, stop_order_id: response.stop_order_id });

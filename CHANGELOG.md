@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.7] - 2026-01-03
+
+### Fixed
+- Remove `tif` parameter from stop orders (not supported by API)
+- Fixes "Verification failed" error on stop limit orders
+- TIF field now only shows for regular limit orders
+
 ## [0.3.6] - 2026-01-03
 
 ### Fixed

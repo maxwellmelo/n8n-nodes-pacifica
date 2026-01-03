@@ -615,15 +615,14 @@ export class PacificaClient {
     amount: string,
     stopPrice: string,
     limitPrice: string,
-    tif: 'GTC' | 'IOC' | 'ALO' | 'TOB',
     reduceOnly: boolean = false,
     clientOrderId?: string
   ): Promise<StopOrderResponse> {
+    // Note: Stop orders do not support TIF (time-in-force) parameter
     const stopOrder: Record<string, unknown> = {
       stop_price: stopPrice,
       limit_price: limitPrice,
       amount,
-      tif,
     };
 
     if (clientOrderId) stopOrder.client_order_id = clientOrderId;

@@ -1,6 +1,6 @@
 {
   "name": "n8n-nodes-pacifica",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "n8n community node for Pacifica - perpetual futures trading with AI-powered features on the Pacifica exchange",
   "keywords": [
     "n8n-community-node-package",

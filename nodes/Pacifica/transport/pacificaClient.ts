@@ -585,19 +585,22 @@ export class PacificaClient {
     reduceOnly: boolean = false,
     clientOrderId?: string
   ): Promise<StopOrderResponse> {
+    const stopOrder: Record<string, unknown> = {
+      stop_price: stopPrice,
+      amount,
+      slippage_percent: slippagePercent,
+    };
+
+    if (clientOrderId) stopOrder.client_order_id = clientOrderId;
+
     const payload: Record<string, unknown> = {
       symbol,
       side,
-      amount,
-      stop_price: stopPrice,
-      slippage_percent: slippagePercent,
       reduce_only: reduceOnly,
-      order_type: 'stop_market',
+      stop_order: stopOrder,
     };
 
-    if (clientOrderId) payload.client_order_id = clientOrderId;
-
-    return this.post('/api/v1/orders/stop', payload, true, 'create_stop_order');
+    return this.post('/api/v1/orders/stop/create', payload, true, 'create_stop_order');
   }
 
   /**
@@ -613,20 +616,23 @@ export class PacificaClient {
     reduceOnly: boolean = false,
     clientOrderId?: string
   ): Promise<StopOrderResponse> {
+    const stopOrder: Record<string, unknown> = {
+      stop_price: stopPrice,
+      limit_price: limitPrice,
+      amount,
+      tif,
+    };
+
+    if (clientOrderId) stopOrder.client_order_id = clientOrderId;
+
     const payload: Record<string, unknown> = {
       symbol,
       side,
-      amount,
-      stop_price: stopPrice,
-      price: limitPrice,
-      tif,
       reduce_only: reduceOnly,
-      order_type: 'stop_limit',
+      stop_order: stopOrder,
     };
 
-    if (clientOrderId) payload.client_order_id = clientOrderId;
-
-    return this.post('/api/v1/orders/stop', payload, true, 'create_stop_order');
+    return this.post('/api/v1/orders/stop/create', payload, true, 'create_stop_order');
   }
 
   /**

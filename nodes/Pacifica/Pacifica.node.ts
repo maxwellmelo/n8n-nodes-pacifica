@@ -265,6 +265,7 @@ export class Pacifica implements INodeType {
           { name: 'Create Stop Market Order', value: 'createStopMarketOrder', action: 'Create stop market order' },
           { name: 'Create Stop Limit Order', value: 'createStopLimitOrder', action: 'Create stop limit order' },
           { name: 'Create Position TP/SL', value: 'createPositionTpSl', action: 'Set take profit and stop loss for position' },
+          { name: 'Create Multi TP/SL', value: 'createMultiTpSl', action: 'Create multiple take profits and stop loss orders' },
           { name: 'Cancel Order', value: 'cancelOrder', action: 'Cancel order' },
           { name: 'Cancel Stop Order', value: 'cancelStopOrder', action: 'Cancel stop order' },
           { name: 'Cancel All Orders', value: 'cancelAllOrders', action: 'Cancel all orders' },
@@ -286,7 +287,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'createPositionTpSl', 'cancelOrder', 'cancelStopOrder', 'getOrderHistory'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'createPositionTpSl', 'createMultiTpSl', 'cancelOrder', 'cancelStopOrder', 'getOrderHistory'],
           },
         },
         description: 'Trading pair symbol',
@@ -524,6 +525,63 @@ export class Pacifica implements INodeType {
           },
         },
         description: 'Array of order actions. Each action: {type: "create_limit"|"create_market"|"cancel", symbol, side?, amount?, price?, slippage_percent?, tif?, reduce_only?, order_id?, client_order_id?}. Max 10 actions.',
+      },
+      // Multi TP/SL Parameters
+      {
+        displayName: 'Position Side',
+        name: 'positionSide',
+        type: 'options',
+        options: [
+          { name: 'Long (close with Sell)', value: 'long' },
+          { name: 'Short (close with Buy)', value: 'short' },
+        ],
+        default: 'long',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createMultiTpSl'],
+          },
+        },
+        description: 'Position side to close (determines order direction for TP/SL)',
+      },
+      {
+        displayName: 'Take Profits (JSON)',
+        name: 'takeProfitsJson',
+        type: 'json',
+        default: '[\n  {"price": "100000", "amount": "0.01"},\n  {"price": "105000", "amount": "0.01"},\n  {"price": "110000", "amount": "0.01"}\n]',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createMultiTpSl'],
+          },
+        },
+        description: 'Array of take profit orders. Each: {price: "trigger price", amount: "size to close", limit_price?: "optional limit"}',
+      },
+      {
+        displayName: 'Stop Loss (JSON)',
+        name: 'stopLossJson',
+        type: 'json',
+        default: '{"price": "90000", "amount": "0.03"}',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createMultiTpSl'],
+          },
+        },
+        description: 'Stop loss order: {price: "trigger price", amount: "size to close", limit_price?: "optional limit"}. Leave empty {} to skip SL.',
+      },
+      {
+        displayName: 'Slippage % (for market orders)',
+        name: 'multiSlippage',
+        type: 'string',
+        default: '0.5',
+        displayOptions: {
+          show: {
+            resource: ['order'],
+            operation: ['createMultiTpSl'],
+          },
+        },
+        description: 'Slippage tolerance for stop market orders (when limit_price is not set)',
       },
 
       // ========== POSITION OPERATIONS ==========
@@ -1019,6 +1077,116 @@ export class Pacifica implements INodeType {
             }
 
             result = await client.batchOrders(actions);
+          }
+
+          if (operation === 'createMultiTpSl') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const positionSide = this.getNodeParameter('positionSide', i) as 'long' | 'short';
+            const takeProfitsJson = this.getNodeParameter('takeProfitsJson', i) as string;
+            const stopLossJson = this.getNodeParameter('stopLossJson', i) as string;
+            const slippage = String(this.getNodeParameter('multiSlippage', i));
+
+            // Determine order side: Long positions close with ask (sell), Short with bid (buy)
+            const orderSide: 'bid' | 'ask' = positionSide === 'long' ? 'ask' : 'bid';
+
+            // Parse TPs
+            let takeProfits: Array<{ price: string; amount: string; limit_price?: string }> = [];
+            try {
+              const parsed = typeof takeProfitsJson === 'string' ? JSON.parse(takeProfitsJson) : takeProfitsJson;
+              takeProfits = Array.isArray(parsed) ? parsed : [];
+            } catch {
+              throw new NodeOperationError(this.getNode(), 'Invalid JSON format for Take Profits');
+            }
+
+            // Parse SL
+            let stopLoss: { price: string; amount: string; limit_price?: string } | null = null;
+            try {
+              const parsed = typeof stopLossJson === 'string' ? JSON.parse(stopLossJson) : stopLossJson;
+              if (parsed && parsed.price && parsed.amount) {
+                stopLoss = parsed;
+              }
+            } catch {
+              throw new NodeOperationError(this.getNode(), 'Invalid JSON format for Stop Loss');
+            }
+
+            const results: Array<{ type: string; success: boolean; stop_order_id?: number; error?: string }> = [];
+
+            // Create TP orders
+            for (let tpIndex = 0; tpIndex < takeProfits.length; tpIndex++) {
+              const tp = takeProfits[tpIndex];
+              try {
+                if (tp.limit_price) {
+                  // Stop limit order for TP
+                  const response = await client.createStopLimitOrder(
+                    symbol.toUpperCase(),
+                    orderSide,
+                    String(tp.amount),
+                    String(tp.price),
+                    String(tp.limit_price),
+                    'GTC',
+                    true // reduce_only
+                  );
+                  results.push({ type: `TP${tpIndex + 1}`, success: true, stop_order_id: response.stop_order_id });
+                } else {
+                  // Stop market order for TP
+                  const response = await client.createStopMarketOrder(
+                    symbol.toUpperCase(),
+                    orderSide,
+                    String(tp.amount),
+                    String(tp.price),
+                    slippage,
+                    true // reduce_only
+                  );
+                  results.push({ type: `TP${tpIndex + 1}`, success: true, stop_order_id: response.stop_order_id });
+                }
+              } catch (error) {
+                const errMsg = error instanceof Error ? error.message : String(error);
+                results.push({ type: `TP${tpIndex + 1}`, success: false, error: errMsg });
+              }
+            }
+
+            // Create SL order
+            if (stopLoss) {
+              try {
+                if (stopLoss.limit_price) {
+                  const response = await client.createStopLimitOrder(
+                    symbol.toUpperCase(),
+                    orderSide,
+                    String(stopLoss.amount),
+                    String(stopLoss.price),
+                    String(stopLoss.limit_price),
+                    'GTC',
+                    true // reduce_only
+                  );
+                  results.push({ type: 'SL', success: true, stop_order_id: response.stop_order_id });
+                } else {
+                  const response = await client.createStopMarketOrder(
+                    symbol.toUpperCase(),
+                    orderSide,
+                    String(stopLoss.amount),
+                    String(stopLoss.price),
+                    slippage,
+                    true // reduce_only
+                  );
+                  results.push({ type: 'SL', success: true, stop_order_id: response.stop_order_id });
+                }
+              } catch (error) {
+                const errMsg = error instanceof Error ? error.message : String(error);
+                results.push({ type: 'SL', success: false, error: errMsg });
+              }
+            }
+
+            result = {
+              symbol: symbol.toUpperCase(),
+              position_side: positionSide,
+              order_side: orderSide,
+              orders: results,
+              summary: {
+                total: results.length,
+                successful: results.filter(r => r.success).length,
+                failed: results.filter(r => !r.success).length,
+              },
+            };
           }
         }
 

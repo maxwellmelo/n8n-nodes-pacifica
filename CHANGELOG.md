@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.5] - 2026-01-03
+
+### Fixed
+- Include `tif` parameter in stop limit order payload (was being ignored)
+
+### Documentation
+- Update README.md with all 30+ operations
+- Update CHANGELOG.md with complete version history
+
 ## [0.3.4] - 2026-01-03
 
 ### Fixed

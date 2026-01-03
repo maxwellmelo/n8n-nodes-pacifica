@@ -493,7 +493,9 @@ export class PacificaClient {
    * Cancel all orders
    */
   async cancelAllOrders(symbols?: string[]): Promise<{ success: boolean }> {
-    const payload: Record<string, unknown> = {};
+    const payload: Record<string, unknown> = {
+      all_symbols: !symbols || symbols.length === 0,
+    };
     if (symbols && symbols.length > 0) {
       payload.symbols = symbols;
     }

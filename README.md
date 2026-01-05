@@ -22,11 +22,13 @@ npm install n8n-nodes-pacifica
 - **Get Symbol Price** - Get price for a specific symbol
 - **Get Orderbook** - Get order book depth for a symbol
 - **Get Candles** - Get historical OHLCV candlestick data
+- **Get Mark Price Candles** - Get historical candles based on mark price
 - **Get Recent Trades** - Get recent trades for a symbol
 - **Get Historical Funding** - Get historical funding rate data
 
 ### Account (Authenticated)
 - **Get Account Info** - Get account balance, equity, margin details
+- **Get Account Settings** - Get leverage and margin mode settings per symbol
 - **Get Trade History** - Get historical trade records
 - **Get Equity History** - Get historical equity data
 - **Get Balance History** - Get historical balance data
@@ -40,6 +42,7 @@ npm install n8n-nodes-pacifica
 - **Create Stop Limit Order** - Place stop limit orders with trigger and limit prices
 - **Create Position TP/SL** - Set take profit and stop loss for an existing position
 - **Create Multi TP/SL** - Create multiple take profit levels with a single stop loss
+- **Edit Order** - Modify price and amount of existing orders
 - **Cancel Order** - Cancel a specific order by ID or client order ID
 - **Cancel Stop Order** - Cancel a stop order by ID or client order ID
 - **Cancel All Orders** - Cancel all open orders (optionally filtered by symbols)

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2026-01-05
+
+### Added
+- **Edit Order** - Modify price and amount of existing orders (cancels and recreates with ALO TIF)
+- **Get Account Settings** - Get leverage and margin mode settings per symbol
+- **Get Mark Price Candles** - Get historical candles based on mark price instead of trade price
+
 ## [0.4.2] - 2026-01-03
 
 ### Fixed

@@ -284,6 +284,16 @@ export interface SubaccountTransferRequest {
   amount: string;
 }
 
+// ========== Account Settings Types ==========
+
+export interface AccountSettings {
+  symbol: string;
+  isolated: boolean;
+  leverage: number;
+  created_at: number;
+  updated_at: number;
+}
+
 // ========== Signing Types ==========
 
 export type SigningOperationType =
@@ -297,6 +307,7 @@ export type SigningOperationType =
   | 'update_leverage'        // Leverage → /api/v1/account/leverage
   | 'update_margin_mode'     // Margin mode → /api/v1/account/margin
   | 'withdraw'               // Withdrawal → /api/v1/account/withdraw
+  | 'edit_order'             // Edit order → /api/v1/orders/edit
   | 'batch_orders';          // Batch (individual ops signed separately)
   // Note: Subaccount operations removed - require dual-signature not supported
 

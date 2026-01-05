@@ -9,6 +9,7 @@ import {
   RecentTrade,
   FundingHistory,
   AccountInfo,
+  AccountSettings,
   Position,
   TradeHistoryEntry,
   OpenOrder,
@@ -336,6 +337,27 @@ export class PacificaClient {
   }
 
   /**
+   * Get historical mark price candles
+   * Returns candles based on mark price instead of trade price
+   */
+  async getMarkPriceCandles(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime?: number
+  ): Promise<PacificaResponse<Candle[]>> {
+    const params: Record<string, string> = {
+      symbol,
+      interval,
+      start_time: startTime.toString(),
+    };
+    if (endTime) {
+      params.end_time = endTime.toString();
+    }
+    return this.get('/api/v1/kline/mark', params);
+  }
+
+  /**
    * Get recent trades for a symbol
    */
   async getRecentTrades(symbol: string): Promise<PacificaResponse<RecentTrade[]>> {
@@ -367,6 +389,16 @@ export class PacificaClient {
    */
   async getAccountInfo(): Promise<PacificaResponse<AccountInfo>> {
     return this.get('/api/v1/account', {
+      account: this.accountAddress,
+    });
+  }
+
+  /**
+   * Get account settings (leverage and margin mode per symbol)
+   * Note: Returns only symbols with non-default settings
+   */
+  async getAccountSettings(): Promise<PacificaResponse<AccountSettings[]>> {
+    return this.get('/api/v1/account/settings', {
       account: this.accountAddress,
     });
   }
@@ -469,6 +501,29 @@ export class PacificaClient {
     if (stopLoss) payload.stop_loss = stopLoss;
 
     return this.post('/api/v1/orders/create', payload, true, 'create_order');
+  }
+
+  /**
+   * Edit an existing order (cancels original and creates new with ALO TIF)
+   * Note: New order maintains same side, reduce-only status, and client_order_id
+   */
+  async editOrder(
+    symbol: string,
+    price: string,
+    amount: string,
+    orderId?: number,
+    clientOrderId?: string
+  ): Promise<OrderResponse> {
+    const payload: Record<string, unknown> = {
+      symbol,
+      price,
+      amount,
+    };
+
+    if (orderId) payload.order_id = orderId;
+    if (clientOrderId) payload.client_order_id = clientOrderId;
+
+    return this.post('/api/v1/orders/edit', payload, true, 'edit_order');
   }
 
   /**

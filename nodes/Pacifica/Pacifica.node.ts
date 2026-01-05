@@ -64,6 +64,7 @@ export class Pacifica implements INodeType {
           { name: 'Get Symbol Price', value: 'getSymbolPrice', action: 'Get price for a specific symbol' },
           { name: 'Get Orderbook', value: 'getOrderbook', action: 'Get orderbook for a symbol' },
           { name: 'Get Candles', value: 'getCandles', action: 'Get historical candle data' },
+          { name: 'Get Mark Price Candles', value: 'getMarkPriceCandles', action: 'Get historical mark price candle data' },
           { name: 'Get Recent Trades', value: 'getRecentTrades', action: 'Get recent trades for a symbol' },
           { name: 'Get Historical Funding', value: 'getHistoricalFunding', action: 'Get historical funding rates' },
         ],
@@ -80,7 +81,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['marketData'],
-            operation: ['getSymbolPrice', 'getOrderbook', 'getCandles', 'getRecentTrades', 'getHistoricalFunding'],
+            operation: ['getSymbolPrice', 'getOrderbook', 'getCandles', 'getMarkPriceCandles', 'getRecentTrades', 'getHistoricalFunding'],
           },
         },
         description: 'Trading pair symbol',
@@ -106,7 +107,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['marketData'],
-            operation: ['getCandles'],
+            operation: ['getCandles', 'getMarkPriceCandles'],
           },
         },
         description: 'Candle interval',
@@ -119,7 +120,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['marketData'],
-            operation: ['getCandles'],
+            operation: ['getCandles', 'getMarkPriceCandles'],
           },
         },
         description: 'Start timestamp in milliseconds',
@@ -132,7 +133,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['marketData'],
-            operation: ['getCandles'],
+            operation: ['getCandles', 'getMarkPriceCandles'],
           },
         },
         description: 'End timestamp in milliseconds (0 = now)',
@@ -174,6 +175,7 @@ export class Pacifica implements INodeType {
         displayOptions: { show: { resource: ['account'] } },
         options: [
           { name: 'Get Account Info', value: 'getAccountInfo', action: 'Get account info' },
+          { name: 'Get Account Settings', value: 'getAccountSettings', action: 'Get account settings per symbol' },
           { name: 'Get Trade History', value: 'getTradeHistory', action: 'Get trade history' },
           { name: 'Get Equity History', value: 'getEquityHistory', action: 'Get account equity history' },
           { name: 'Get Balance History', value: 'getBalanceHistory', action: 'Get account balance history' },
@@ -266,6 +268,7 @@ export class Pacifica implements INodeType {
           { name: 'Create Stop Limit Order', value: 'createStopLimitOrder', action: 'Create stop limit order' },
           { name: 'Create Position TP/SL', value: 'createPositionTpSl', action: 'Set take profit and stop loss for position' },
           { name: 'Create Multi TP/SL', value: 'createMultiTpSl', action: 'Create multiple take profits and stop loss orders' },
+          { name: 'Edit Order', value: 'editOrder', action: 'Edit an existing order price and amount' },
           { name: 'Cancel Order', value: 'cancelOrder', action: 'Cancel order' },
           { name: 'Cancel Stop Order', value: 'cancelStopOrder', action: 'Cancel stop order' },
           { name: 'Cancel All Orders', value: 'cancelAllOrders', action: 'Cancel all orders' },
@@ -287,7 +290,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'createPositionTpSl', 'createMultiTpSl', 'cancelOrder', 'cancelStopOrder', 'getOrderHistory'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'createPositionTpSl', 'createMultiTpSl', 'editOrder', 'cancelOrder', 'cancelStopOrder', 'getOrderHistory'],
           },
         },
         description: 'Trading pair symbol',
@@ -333,7 +336,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'editOrder'],
           },
         },
         description: 'Order amount in base asset units',
@@ -359,7 +362,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createLimitOrder', 'createStopLimitOrder'],
+            operation: ['createLimitOrder', 'createStopLimitOrder', 'editOrder'],
           },
         },
         description: 'Limit price for the order',
@@ -417,7 +420,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'cancelOrder', 'cancelStopOrder'],
+            operation: ['createMarketOrder', 'createLimitOrder', 'createStopMarketOrder', 'createStopLimitOrder', 'editOrder', 'cancelOrder', 'cancelStopOrder'],
           },
         },
         description: 'Optional client-defined order identifier (UUID)',
@@ -430,7 +433,7 @@ export class Pacifica implements INodeType {
         displayOptions: {
           show: {
             resource: ['order'],
-            operation: ['cancelOrder', 'getOrderById'],
+            operation: ['cancelOrder', 'editOrder', 'getOrderById'],
           },
         },
         description: 'Exchange order ID',
@@ -758,6 +761,20 @@ export class Pacifica implements INodeType {
             result = response.data;
           }
 
+          if (operation === 'getMarkPriceCandles') {
+            const symbol = this.getNodeParameter('symbol', i) as string;
+            const interval = this.getNodeParameter('interval', i) as string;
+            const startTime = this.getNodeParameter('startTime', i) as number;
+            const endTime = this.getNodeParameter('endTime', i) as number;
+            const response = await client.getMarkPriceCandles(
+              symbol.toUpperCase(),
+              interval,
+              startTime,
+              endTime || undefined
+            );
+            result = response.data;
+          }
+
           if (operation === 'getRecentTrades') {
             const symbol = this.getNodeParameter('symbol', i) as string;
             const response = await client.getRecentTrades(symbol.toUpperCase());
@@ -776,6 +793,11 @@ export class Pacifica implements INodeType {
         if (resource === 'account') {
           if (operation === 'getAccountInfo') {
             const response = await client.getAccountInfo() as PacificaResponse<AccountInfo>;
+            result = response.data;
+          }
+
+          if (operation === 'getAccountSettings') {
+            const response = await client.getAccountSettings();
             result = response.data;
           }
 
@@ -878,6 +900,22 @@ export class Pacifica implements INodeType {
               amount,
               tif,
               reduceOnly,
+              clientOrderId || undefined
+            );
+          }
+
+          if (operation === 'editOrder') {
+            const symbol = this.getNodeParameter('orderSymbol', i) as string;
+            const price = String(this.getNodeParameter('price', i));
+            const amount = String(this.getNodeParameter('amount', i));
+            const orderId = this.getNodeParameter('orderId', i) as number;
+            const clientOrderId = this.getNodeParameter('clientOrderId', i) as string;
+
+            result = await client.editOrder(
+              symbol.toUpperCase(),
+              price,
+              amount,
+              orderId || undefined,
               clientOrderId || undefined
             );
           }
